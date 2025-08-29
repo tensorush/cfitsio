@@ -16,28 +16,32 @@ pub fn build(b: *std.Build) void {
     // Library
     const lib_step = b.step("lib", "Install library");
 
-    const lib = b.addStaticLibrary(.{
+    const lib = b.addLibrary(.{
         .name = "cfitsio",
-        .target = target,
+        .linkage = .static,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
         .version = version,
-        .optimize = optimize,
     });
 
-    var flags = std.BoundedArray([]const u8, 6){};
-    flags.appendSliceAssumeCapacity(&FLAGS);
+    var flags_buffer: [6][]const u8 = undefined;
+    var flags = std.ArrayListUnmanaged([]const u8).initBuffer(&flags_buffer);
+    flags.appendSliceBounded(&FLAGS) catch unreachable;
     if (target.result.cpu.arch.isX86()) {
-        flags.appendSliceAssumeCapacity(&.{ "-msse2", "-mssse3" });
+        flags.appendSliceBounded(&.{ "-msse2", "-mssse3" }) catch unreachable;
     }
     if (use_curl) {
         lib.linkSystemLibrary("curl");
-        flags.appendAssumeCapacity("-DCFITSIO_HAVE_CURL");
+        flags.appendBounded("-DCFITSIO_HAVE_CURL") catch unreachable;
     }
     if (use_bz2) {
         lib.linkSystemLibrary("bz2");
-        flags.appendAssumeCapacity("-DHAVE_BZIP2=1");
+        flags.appendBounded("-DHAVE_BZIP2=1") catch unreachable;
     }
 
-    lib.addCSourceFiles(.{ .root = cfitsio_path, .files = &SOURCES, .flags = flags.constSlice() });
+    lib.addCSourceFiles(.{ .root = cfitsio_path, .files = &SOURCES, .flags = flags.items });
     lib.installHeadersDirectory(cfitsio_path, "", .{ .include_extensions = &HEADERS });
     lib.linkSystemLibrary("z");
     lib.linkLibC();

@@ -2,7 +2,7 @@
     .name = .cfitsio,
     .version = "4.6.2",
     .fingerprint = 0xb6653d980098a42d,
-    .minimum_zig_version = "0.15.0-dev.1034+bd97b6618",
+    .minimum_zig_version = "0.15.1",
     .dependencies = .{
         .cfitsio = .{
             .url = "https://github.com/HEASARC/cfitsio/archive/refs/tags/cfitsio-4.6.2.tar.gz",
